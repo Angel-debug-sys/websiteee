@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Be My Valentine 💖</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: 'Comic Sans MS', cursive;
+  overflow-x: hidden;
+  transition: background 2s;
+}
+
+/* THEMES */
+body.day {
+  background: linear-gradient(to bottom, #ffb6c1, #8B0000);
+  background-attachment: fixed;
+}
+body.night {
+  background: linear-gradient(to bottom, #ffb6c1, #8B0000);
+  background-attachment: fixed;
+}
+body.love {
+  background: linear-gradient(to bottom, #ffb6c1, #8B0000);
+  background-attachment: fixed;
+}
+body.romantic {
+  background: linear-gradient(to bottom, #ffb6c1, #8B0000);
+  background-attachment: fixed;
+}
+
+@keyframes bgMove {
+  0% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+  100% { background-position:0% 50%; }
+}
+
+/* HEARTS */
+.hearts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.hearts span {
+  position: absolute;
+  bottom: -50px;
+  animation: floatUp linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes floatUp {
+  from { transform: translateY(0); opacity:1; }
+  to { transform: translateY(-120vh); opacity:0; }
+}
+
+/* CONTAINER */
+.container, .proposal {
+  position: relative;
+  z-index: 2;
+  background: white;
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  border-radius: 25px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(255,77,109,0.4);
+}
+.hidden { display: none; }
+h1, h2 { color:#ff4d6d; }
+
+button {
+  padding: 12px 22px;
+  border-radius: 25px;
+  border: none;
+  margin: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform .2s;
+}
+button:hover { transform: scale(1.1); }
+
+.yes { background:#ff4d6d; color:white; }
+.no { background:#ccc; position:absolute; }
+
+/* COUNTDOWN */
+#countdown {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color:#ff4d6d;
+  border:2px solid #ff4d6d;
+  padding:10px;
+  border-radius:20px;
+}
+
+/* TYPEWRITER */
+.typewriter {
+  border-right: 2px solid pink;
+  white-space: pre-line;
+  overflow: hidden;
+}
+
+/* MUSIC CONTROL */
+#musicToggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(255,77,109,0.4);
+  transition: transform 0.3s;
+}
+
+#musicToggle:hover {
+  transform: scale(1.15);
+}
+
+/* FIREWORKS */
+canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+</style>
+</head>
+
+<body class="day">
+
+<!-- Background Tamil Music: place your MP3 in the 'music' folder and name it 'your-music.mp3', or update the src below -->
+<audio id="bgMusic" autoplay loop playsinline>
+  <source src="C:\Users\123\Documents\valentine website\angel.mp3" type="audio/mp3">
+</audio>
+
+<div class="hearts" id="hearts"></div>
+<canvas id="fireworks"></canvas>
+<button id="musicToggle" title="Mute/Unmute Music">🔊</button>
+
+<div class="container" id="main">
+  <div id="countdown"></div>
+
+  <h1>💘 Williams, Will You Be My Valentine? 💘</h1>
+
+  <button class="yes" onclick="showLove()">YES ❤️</button>
+  <button class="no" id="noBtn" onmouseover="moveNo()">NO 💔</button>
+
+  <div id="loveSection" class="hidden">
+    <p id="letter" class="typewriter"></p>
+    <button class="yes" onclick="showProposal()">Next 💍</button>
+  </div>
+</div>
+
+<div class="proposal hidden" id="proposal">
+  <h2>💍 Williams, will you be mine forever?</h2>
+  <p id="preface" class="typewriter" style="text-align:center; font-style:italic; margin:10px auto 6px; font-size:16px; line-height:1.4;"></p>
+  <p id="poem" class="typewriter" style="text-align:center; font-style:italic; margin:6px auto 20px; font-size:18px; line-height:1.4;"></p>
+  <button class="yes" onclick="finalYes()">YES, FOREVER ❤️</button>
+</div>
+
+<script>
+/* MUSIC CONTROL */
+const bgMusic = document.getElementById("bgMusic");
+const musicToggle = document.getElementById("musicToggle");
+
+musicToggle.addEventListener("click", () => {
+  if(bgMusic.paused){
+    bgMusic.play();
+    musicToggle.textContent = "🔊";
+  } else {
+    bgMusic.pause();
+    musicToggle.textContent = "🔇";
+  }
+});
+
+// Try to autoplay
+bgMusic.play().catch(() => {
+  console.log("Autoplay was prevented. Music will play on first user interaction.");
+});
+
+// Start music on first click anywhere
+let started = false;
+document.addEventListener("click", () => {
+  if (!started) {
+    bgMusic.play().then(() => {
+      started = true;
+      console.log("Music started");
+    }).catch(err => console.log(err));
+  }
+}, { once: true });
+
+/* HEART SYSTEM */
+const heartsDiv = document.getElementById("hearts");
+
+let heartSet = ["🤍"];
+let heartCount = 80;
+let speedMin = 8;
+let speedMax = 18;
+let sizeMin = 14;
+let sizeMax = 28;
+
+function createHearts(){
+  heartsDiv.innerHTML = "";
+  for(let i=0;i<heartCount;i++){
+    const s=document.createElement("span");
+    s.innerText=heartSet[Math.random()*heartSet.length|0];
+    s.style.left=Math.random()*100+"%";
+    s.style.fontSize =
+      (sizeMin + Math.random()*(sizeMax-sizeMin)) + "px";
+    s.style.animationDuration =
+      (speedMin + Math.random()*(speedMax-speedMin)) + "s";
+    heartsDiv.appendChild(s);
+  }
+}
+createHearts();
+
+/* NO BUTTON */
+function moveNo(){
+  const btn=document.getElementById("noBtn");
+  const box=document.getElementById("main");
+  btn.style.left=Math.random()*(box.clientWidth-btn.offsetWidth-20)+"px";
+  btn.style.top=Math.random()*(box.clientHeight-btn.offsetHeight-20)+"px";
+}
+
+/* LOVE FLOW */
+function showLove(){
+  document.getElementById("loveSection").classList.remove("hidden");
+  typeLetter();
+}
+const letter="Thangemeyyyyyy,\n\nOne Year yen kuda irundha you saw all my faces - the good, the bad, the crazy, and you still chose to be with me. I am so grateful for your love and support. You are my rockstar, my best friend,my partner and my soulmate. I promise to love you forever and always.\n\nWill you be mine forever?";
+let i=0;
+function typeLetter(){
+  const el=document.getElementById("letter");
+  if(i<letter.length){
+    el.textContent+=letter[i++];
+    setTimeout(typeLetter,50);
+  }
+}
+// Poem typing for proposal
+// Preface and poem typing for proposal
+const preface = "En koodavey iru da unna naa nalla paathupen nee soldra la un love mattum podhum nu adhey maathiri naanum unnaku en love ah unconditional ah tharuven da unnaku nyabagam iruka nu theriyala but once again I will say";
+let prefaceIndex = 0;
+function typePreface(){
+  const el = document.getElementById("preface");
+  if(!el) return;
+  if(prefaceIndex < preface.length){
+    el.textContent += preface[prefaceIndex++];
+    setTimeout(typePreface, 45);
+  } else {
+    // after a short pause, clear and start poem
+    setTimeout(() => {
+      poemIndex = 0;
+      typePoem();
+    }, 700);
+  }
+}
+
+const poem = '"Iravu mutham koduthu, uranga sonna piragum, kan vizhithu kaathu kondirundhen ada, un kaalai muthathirkaaga"';
+let poemIndex = 0;
+function typePoem(){
+  const el = document.getElementById("poem");
+  if(!el) return;
+  if(poemIndex < poem.length){
+    el.textContent += poem[poemIndex++];
+    setTimeout(typePoem, 50);
+  }
+}
+function showProposal(){
+  document.getElementById("main").classList.add("hidden");
+  document.getElementById("proposal").classList.remove("hidden");
+  fireworks();
+  // start typing: preface first, then poem — clear both fields and reset indices
+  const preEl = document.getElementById('preface');
+  const poemEl = document.getElementById('poem');
+  if(preEl) preEl.textContent = '';
+  if(poemEl) poemEl.textContent = '';
+  prefaceIndex = 0;
+  poemIndex = 0;
+  typePreface();
+}
+
+/* FIREWORKS */
+const c=document.getElementById("fireworks");
+const ctx=c.getContext("2d");
+c.width=innerWidth;c.height=innerHeight;
+let p=[];
+function fireworks(){
+  for(let i=0;i<200;i++){
+    p.push({
+      x:c.width/2,y:c.height/2,
+      vx:(Math.random()-0.5)*6,
+      vy:(Math.random()-0.5)*6,
+      l:100,
+      c:`hsl(${Math.random()*360},100%,60%)`
+    });
+  }
+}
+(function anim(){
+  ctx.clearRect(0,0,c.width,c.height);
+  p=p.filter(x=>x.l--);
+  p.forEach(x=>{
+    x.x+=x.vx;x.y+=x.vy;
+    ctx.fillStyle=x.c;
+    ctx.beginPath();ctx.arc(x.x,x.y,3,0,7);ctx.fill();
+  });
+  requestAnimationFrame(anim);
+})();
+function finalYes(){ fireworks(); alert("💍 Aww I Knew it forever❤️"); }
+
+/* COUNTDOWN */
+function nextValentine(){
+  let y=new Date().getFullYear();
+  let d=new Date(`February 14 ${y}`);
+  if(new Date()>d) d=new Date(`February 14 ${y+1}`);
+  return d;
+}
+const target=nextValentine();
+setInterval(()=>{
+  const diff=target-new Date();
+  countdown.innerText=diff<=0
+    ?"💖 Happy Valentine's Day 💖"
+    :`⏳ ${Math.floor(diff/86400000)}d ${Math.floor(diff/3600000)%24}h ${Math.floor(diff/60000)%60}m ${Math.floor(diff/1000)%60}s`;
+},1000);
+
+/* THEME SYSTEM */
+let manualTheme=null;
+function setTheme(t){
+  if(t==="default"){
+    manualTheme=null;
+    heartSet=["🤍"];
+    heartCount=40;
+    speedMin=8; speedMax=18;
+    sizeMin=14; sizeMax=38;
+    createHearts();
+    autoTheme();
+    return;
+  }
+
+  manualTheme=t;
+  document.body.className=t;
+
+  if(t==="night"){
+    heartSet=["🤍"];
+    heartCount=45;
+    speedMin=7;   // ⭐ slower falling (like stars)
+    speedMax=12;
+    sizeMin=14;
+    sizeMax=32;
+  }
+  else if(t==="romantic"){
+    heartSet=["🤍"];
+    heartCount=40;
+    speedMin=8; speedMax=18;
+    sizeMin=28;
+    sizeMax=52;
+  }
+  else{
+    heartSet=["🤍"];
+    heartCount=40;
+    speedMin=8; speedMax=18;
+    sizeMin=14; sizeMax=38;
+  }
+  createHearts();
+}
+
+function autoTheme(){
+  if(manualTheme) return;
+  const themes = ['love', 'romantic', 'night', 'day'];
+  let currentThemeIndex = 0;
+  setInterval(() => {
+    const theme = themes[currentThemeIndex % themes.length];
+    setTheme(theme === 'day' ? 'default' : theme);
+    currentThemeIndex++;
+  }, 5000);
+}
+autoTheme();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
